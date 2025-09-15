@@ -1,0 +1,8 @@
+en:
+  file_version:
+    file_upload: Upload File
+    file_upload_tooltip: |
+        <p>Uploads a file associated with the digital object.</p>
+  validation_errors:
+    file_server_error: There was a problem with the file server. Please contact your system administrator.
+    must_be_unique: Must be unique.

@@ -1,0 +1,4 @@
+model_class: "OmekaClient"
+baseurl: "omeka_baseurl"
+api_key_identity: "omeka_api_key_identity"
+api_key_credential: "omeka_api_key_credential"
