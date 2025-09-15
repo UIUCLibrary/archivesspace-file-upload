@@ -10,7 +10,6 @@ class DigitalObjectsController < ApplicationController
                       "manage_repository" => [:defaults, :update_defaults]
 
   include ExportHelper
-  include ApplicationHelper
   include NotesHelper
   include DigitalObjectHelper
 
@@ -23,7 +22,7 @@ class DigitalObjectsController < ApplicationController
         search_params = params_for_backend_search.merge({"facet[]" => SearchResultData.DIGITAL_OBJECT_FACETS})
         search_params["type[]"] = params[:include_components] === "true" ? ["digital_object", "digital_object_component"] : [ "digital_object" ]
         uri = "/repositories/#{session[:repo_id]}/search"
-        csv_response( uri, Search.build_filters(search_params), "#{t('digital_object._plural').downcase}." )
+        csv_response( uri, Search.build_filters(search_params), "#{I18n.t('digital_object._plural').downcase}." )
       }
     end
   end
@@ -41,7 +40,7 @@ class DigitalObjectsController < ApplicationController
       # only fetch the fully resolved record when rendering the full form
       @digital_object = JSONModel(:digital_object).find(params[:id], find_opts)
 
-      flash.now[:info] = t("digital_object._frontend.messages.suppressed_info") if @digital_object.suppressed
+      flash.now[:info] = I18n.t("digital_object._frontend.messages.suppressed_info", JSONModelI18nWrapper.new(:digital_object => @digital_object).enable_parse_mixed_content!(url_for(:root))) if @digital_object.suppressed
 
       return render_aspace_partial :partial => "digital_objects/show_inline"
     end
@@ -62,14 +61,14 @@ class DigitalObjectsController < ApplicationController
 
 
   def new
-    @digital_object = JSONModel(:digital_object).new({:title => t("digital_object.title_default", :default => "")})._always_valid!
+    @digital_object = JSONModel(:digital_object).new({:title => I18n.t("digital_object.title_default", :default => "")})._always_valid!
 
     if user_prefs['default_values']
       defaults = DefaultValues.get 'digital_object'
 
       if defaults
         @digital_object.update(defaults.values)
-        @form_title = "#{t('actions.new_prefix')} #{t('digital_object._singular')}"
+        @form_title = "#{I18n.t('actions.new_prefix')} #{I18n.t('digital_object._singular')}"
       end
     end
 
@@ -95,11 +94,11 @@ class DigitalObjectsController < ApplicationController
   def defaults
     defaults = DefaultValues.get 'digital_object'
 
-    values = defaults ? defaults.form_values : {:title => t("digital_object.title_default", :default => "")}
+    values = defaults ? defaults.form_values : {:title => I18n.t("digital_object.title_default", :default => "")}
 
     @digital_object = JSONModel(:digital_object).new(values)._always_valid!
 
-    @form_title = t("default_values.form_title.digital_object")
+    @form_title = I18n.t("default_values.form_title.digital_object")
 
     render "defaults"
   end
@@ -151,14 +150,14 @@ class DigitalObjectsController < ApplicationController
                   render :action => "new"
                 },
                 :on_valid => ->(id) {
-                  flash[:success] = t("digital_object._frontend.messages.created", digital_object_title: clean_mixed_content(@digital_object.title))
+                  flash[:success] = I18n.t("digital_object._frontend.messages.created", JSONModelI18nWrapper.new(:digital_object => @digital_object).enable_parse_mixed_content!(url_for(:root)))
 
                   if @digital_object["is_slug_auto"] == false &&
                      @digital_object["slug"] == nil &&
                      params["digital_object"] &&
                      params["digital_object"]["is_slug_auto"] == "1"
 
-                    flash[:warning] = t("slug.autogen_disabled")
+                    flash[:warning] = I18n.t("slug.autogen_disabled")
                   end
 
                   return render :json => @digital_object.to_hash if inline?
@@ -179,13 +178,14 @@ class DigitalObjectsController < ApplicationController
                 },
                 :on_valid => ->(id) {
 
-                  flash.now[:success] = t("digital_object._frontend.messages.updated", digital_object_title: clean_mixed_content(@digital_object.title))
-                  if @digital_object["is_slug_auto"] == false &&
-                    @digital_object["slug"] == nil &&
-                    params["digital_object"] &&
-                    params["digital_object"]["is_slug_auto"] == "1"
+                  flash.now[:success] = I18n.t("digital_object._frontend.messages.updated", JSONModelI18nWrapper.new(:digital_object => @digital_object).enable_parse_mixed_content!(url_for(:root)))
 
-                    flash.now[:warning] = t("slug.autogen_disabled")
+                  if @digital_object["is_slug_auto"] == false &&
+                     @digital_object["slug"] == nil &&
+                     params["digital_object"] &&
+                     params["digital_object"]["is_slug_auto"] == "1"
+
+                    flash.now[:warning] = I18n.t("slug.autogen_disabled")
                   end
 
                   render_aspace_partial :partial => "edit_inline"
@@ -200,11 +200,11 @@ class DigitalObjectsController < ApplicationController
       FileUploadClient.delete(digital_object.digital_object_id)
       digital_object.delete
     rescue ConflictException => e
-      flash[:error] = t("digital_object._frontend.messages.delete_conflict", :error => t("errors.#{e.conflicts}", :default => e.message))
+      flash[:error] = I18n.t("digital_object._frontend.messages.delete_conflict", :error => I18n.t("errors.#{e.conflicts}", :default => e.message))
       return redirect_to(:controller => :digital_objects, :action => :show, :id => params[:id])
     end
 
-    flash[:success] = t("digital_object._frontend.messages.deleted", digital_object_title: clean_mixed_content(digital_object.title))
+    flash[:success] = I18n.t("digital_object._frontend.messages.deleted", JSONModelI18nWrapper.new(:digital_object => digital_object).enable_parse_mixed_content!(url_for(:root)))
     redirect_to(:controller => :digital_objects, :action => :index, :deleted_uri => digital_object.uri)
   end
 
@@ -215,7 +215,7 @@ class DigitalObjectsController < ApplicationController
     response = JSONModel::HTTP.post_form("#{digital_object.uri}/publish")
 
     if response.code == '200'
-      flash[:success] = t("digital_object._frontend.messages.published", digital_object_title: clean_mixed_content(digital_object.title))
+      flash[:success] = I18n.t("digital_object._frontend.messages.published", JSONModelI18nWrapper.new(:digital_object => digital_object).enable_parse_mixed_content!(url_for(:root)))
     else
       flash[:error] = ASUtils.json_parse(response.body)['error'].to_s
     end
@@ -262,7 +262,7 @@ class DigitalObjectsController < ApplicationController
     if params[:digital_record_children].blank? or params[:digital_record_children]["children"].blank?
 
       @children = DigitalObjectChildren.new
-      flash.now[:error] = t("rde.messages.no_rows")
+      flash.now[:error] = I18n.t("rde.messages.no_rows")
 
     else
       children_data = cleanup_params_for_schema(params[:digital_record_children], JSONModel(:digital_record_children).schema)
@@ -275,9 +275,9 @@ class DigitalObjectsController < ApplicationController
 
           error_count = @exceptions.select {|e| !e.empty?}.length
           if error_count > 0
-            flash.now[:error] = t("rde.messages.rows_with_errors", :count => error_count)
+            flash.now[:error] = I18n.t("rde.messages.rows_with_errors", :count => error_count)
           else
-            flash.now[:success] = t("rde.messages.rows_no_errors")
+            flash.now[:success] = I18n.t("rde.messages.rows_no_errors")
           end
 
           return render_aspace_partial :partial => "shared/rde"
@@ -285,7 +285,7 @@ class DigitalObjectsController < ApplicationController
           @children.save(:digital_object_id => @parent.id)
         end
 
-        return render :plain => t("rde.messages.success")
+        return render :plain => I18n.t("rde.messages.success")
       rescue JSONModel::ValidationException => e
         @exceptions = @children
                       .children
@@ -295,7 +295,7 @@ class DigitalObjectsController < ApplicationController
         if @exceptions.all?(&:blank?)
           e.errors.each { |key, vals| flash.now[:error] = "#{key} : #{vals.join('<br/>')}" }
         else
-          flash.now[:error] = t("rde.messages.rows_with_errors", :count => @exceptions.select {|e| !e.empty?}.length)
+          flash.now[:error] = I18n.t("rde.messages.rows_with_errors", :count => @exceptions.select {|e| !e.empty?}.length)
         end
       end
 
@@ -309,7 +309,7 @@ class DigitalObjectsController < ApplicationController
     digital_object = JSONModel(:digital_object).find(params[:id])
     digital_object.set_suppressed(true)
 
-    flash[:success] = t("digital_object._frontend.messages.suppressed", digital_object_title: clean_mixed_content(digital_object.title))
+    flash[:success] = I18n.t("digital_object._frontend.messages.suppressed", JSONModelI18nWrapper.new(:digital_object => digital_object).enable_parse_mixed_content!(url_for(:root)))
     redirect_to(:controller => :digital_objects, :action => :show, :id => params[:id])
   end
 
@@ -318,7 +318,7 @@ class DigitalObjectsController < ApplicationController
     digital_object = JSONModel(:digital_object).find(params[:id])
     digital_object.set_suppressed(false)
 
-    flash[:success] = t("digital_object._frontend.messages.unsuppressed", digital_object_title: clean_mixed_content(digital_object.title))
+    flash[:success] = I18n.t("digital_object._frontend.messages.unsuppressed", JSONModelI18nWrapper.new(:digital_object => digital_object).enable_parse_mixed_content!(url_for(:root)))
     redirect_to(:controller => :digital_objects, :action => :show, :id => params[:id])
   end
 
@@ -387,8 +387,8 @@ class DigitalObjectsController < ApplicationController
     prepare_tree_nodes(tree) do |node|
 
       node['text'] = node['title']
-      node['level'] = t("enumerations.digital_object_level.#{node['level']}", :default => node['level']) if node['level']
-      node['digital_object_type'] = t("enumerations.digital_object_digital_object_type.#{node['digital_object_type']}", :default => node['digital_object_type']) if node['digital_object_type']
+      node['level'] = I18n.t("enumerations.digital_object_level.#{node['level']}", :default => node['level']) if node['level']
+      node['digital_object_type'] = I18n.t("enumerations.digital_object_digital_object_type.#{node['digital_object_type']}", :default => node['digital_object_type']) if node['digital_object_type']
 
       node_db_id = node['id']
 
@@ -417,4 +417,4 @@ class DigitalObjectsController < ApplicationController
 
 end
 
-#from commit 1bf3272
+#from commit e66cd04
