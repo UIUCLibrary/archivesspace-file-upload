@@ -134,7 +134,7 @@ class OmekaClient
             return self.create(obj, params)
         end
 
-        media_list = item[0]["o:media"].to_h { |media, idx| [media['@id'], media['o:id']] }
+        media_list = item[0]["o:media"].map { |media| [media['@id'], media['o:id']] }.to_h
         primary_media = nil
         if params.has_key?(:file_versions)
             i = 0
