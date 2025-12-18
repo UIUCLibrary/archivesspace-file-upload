@@ -44,6 +44,52 @@ class OmekaClient
             "@type": "o:Item",
             "o:is_public": params[:publish],
         }
+
+        if params.has_key?(:linked_agents)
+            params[:linked_agents].each do |k, v|
+                if v[:role] == "creator"
+                    data["dcterms:creator"] ||= []
+                    begin
+                        creator = JSON.parse(v[:_resolved])
+                        data["dcterms:creator"].push({
+                            "property_id": "auto",
+                            "@value": creator["title"],
+                            "type": "literal"
+                        })
+                    rescue TypeError
+                        v[:_resolved].each do |v2|
+                            creator = JSON.parse(v2)
+                            data["dcterms:creator"].push({
+                                "property_id": "auto",
+                                "@value": creator["title"],
+                                "type": "literal"
+                            })
+                        end
+                    end
+                end
+            end
+        end
+
+        if params.has_key?(:notes)
+            note_types = { 
+                "summary" => "dcterms:description",
+                "physdesc" => "dcterms:extent",
+                "note" => "dcterms:contributor",
+                "userestrict" => "dcterms:accessRights"
+            }
+            params[:notes].each do |k, v|
+                if note_types.has_key?(v[:type])
+                    data[note_types[v[:type]]] ||= []
+                    data[note_types[v[:type]]].push({
+                        "property_id": "auto",
+                        "@value": v[:content].values.join("\n\n"),
+                        "type": "literal",
+                        "is_public": v[:publish] ? true : false 
+                    })
+                end
+            end
+        end
+
         if primary_media.is_a?(Integer)
             data["o:primary_media"] = {
                 "o:id": primary_media
