@@ -28,6 +28,26 @@ class OmekaClient
         return url
     end
 
+    def self.add_subject_to_data(subject_src, data_dst)
+        term_types = {
+            "genre_form" => "schema:genre",
+            "geographic" => "dcterms:spatial",
+            "topical" => "dcterms:subject",
+#                "occupation" => "schema:occupation",
+#                "uniform_title" => "dcterms:alternative"
+        }
+        subject_src["terms"].each do |term_entry|
+            if term_types.has_key?(term_entry["term_type"])
+                data_dst[term_types[term_entry["term_type"]]] ||= []
+                data_dst[term_types[term_entry["term_type"]]].push({
+                    "property_id": "auto",
+                    "@value": term_entry["term"],
+                    "type": "literal"
+                })
+            end
+        end
+    end
+
     def self.prepare_item_data(params, primary_media, new_item = true)
         property_id = params.has_key?(:component_id) ? params[:component_id] : params[:digital_object_id] 
         data = {
@@ -46,12 +66,17 @@ class OmekaClient
         }
 
         if params.has_key?(:linked_agents)
+            agent_types = {
+                "creator" => "dcterms:creator",
+    #            "subject" => "",
+    #            "source" => ""
+            }
             params[:linked_agents].each do |k, v|
-                if v[:role] == "creator"
-                    data["dcterms:creator"] ||= []
+                if agent_types.has_key?(v[:role])
+                    data[agent_types[v[:role]]] ||= []
                     begin
                         creator = JSON.parse(v[:_resolved])
-                        data["dcterms:creator"].push({
+                        data[agent_types[v[:role]]].push({
                             "property_id": "auto",
                             "@value": creator["title"],
                             "type": "literal"
@@ -59,12 +84,29 @@ class OmekaClient
                     rescue TypeError
                         v[:_resolved].each do |v2|
                             creator = JSON.parse(v2)
-                            data["dcterms:creator"].push({
+                            data[agent_types[v[:role]]].push({
                                 "property_id": "auto",
                                 "@value": creator["title"],
                                 "type": "literal"
                             })
                         end
+                    end
+                end
+            end
+        end
+
+        if params.has_key?(:subjects)
+            params[:subjects].each do |k, v|
+                begin
+                    subject = JSON.parse(v[:_resolved])
+                    self.add_subject_to_data(subject, data)
+                rescue NoMethodError
+                    subject = JSON.parse(JSON.parse(v[:_resolved])["json"])
+                    self.add_subject_to_data(subject, data)
+                rescue TypeError
+                    v[:_resolved].each do |v2|
+                        subject = JSON.parse(JSON.parse(v2)["json"])
+                        self.add_subject_to_data(subject, data)
                     end
                 end
             end
