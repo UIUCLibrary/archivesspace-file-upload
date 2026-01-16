@@ -6,3 +6,6 @@ en:
   validation_errors:
     file_server_error: There was a problem with the file server. Please contact your system administrator.
     must_be_unique: Must be unique.
+  bulk:
+    _singular: "Majority of material found in %{dates}"
+    _plural: "Majority of material found within %{dates}"

@@ -1,7 +1,38 @@
 require 'uri'
 require 'net/http'
 require 'json'
-require 'multipart_post'
+
+def parse_date(date)
+    label_value = date.fetch('label', date['date_label'])
+    begin_date  = date.fetch('begin', date.fetch('structured_date_range', {})['begin_date_standardized'])
+    end_date    = date.fetch('end',   date.fetch('structured_date_range', {})['end_date_standardized'])
+
+    if !label_value.blank?
+        if label_value == 'creation'
+        label = ''
+        else
+        label = "#{I18n.t('enumerations.date_label.' + label_value, default: label_value)}: "
+        end
+    else
+        label = ''
+    end
+
+    exp = date['expression'] || ''
+    if exp.blank?
+        exp = begin_date unless begin_date.blank?
+        unless end_date.blank?
+        exp = (exp.blank? ? '' : exp + ' - ') + end_date
+        end
+    end
+
+    if date['date_type'] == 'bulk'
+        exp = exp.sub('bulk', '').sub('()', '').strip
+        exp = begin_date == end_date ? I18n.t('bulk._singular', :dates => exp) :
+                I18n.t('bulk._plural', :dates => exp)
+    end
+
+    [label, exp, label_value]
+end
 
 class OmekaClient
     @@config = Plugins.config_for('archivesspace-file-upload')
@@ -64,6 +95,43 @@ class OmekaClient
             "@type": "o:Item",
             "o:is_public": params[:publish],
         }
+
+        if params.has_key?(:lang_materials)
+            params[:lang_materials].each do |k, v|
+                data["dcterms:language"] ||= []
+                if v.has_key?(:language_and_script)
+                    language = I18n.t('enumerations.language_iso639_2.'+v[:language_and_script][:language])
+                    language += " - " + I18n.t('enumerations.script_iso15924.'+v[:language_and_script][:script]) unless v[:language_and_script][:script].blank?
+                    data["dcterms:language"].push({
+                        "property_id": "auto",
+                        "@value": language,
+                        "type": "literal"
+                    })
+                elsif v.has_key?(:notes)
+                    v[:notes].each do |k2, v2|
+                        v2[:content].each do |k2, v3|
+                            data["dcterms:language"].push({
+                                "property_id": "auto",
+                                "@value": v3,
+                                "type": "literal"
+                            })
+                        end
+                    end
+                end
+            end
+        end
+
+        if params.has_key?(:dates)
+            params[:dates].each do |k, v|
+                data["dcterms:date"] ||= []
+                parsed_date = parse_date(v)
+                data["dcterms:date"].push({
+                    "property_id": "auto",
+                    "@value": "#{parsed_date[0]} #{parsed_date[1]}".strip,
+                    "type": "literal"
+                })
+            end
+        end
 
         if params.has_key?(:linked_agents)
             agent_types = {
