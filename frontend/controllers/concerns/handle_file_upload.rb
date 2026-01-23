@@ -1,8 +1,6 @@
 module HandleFileUpload
   extend ActiveSupport::Concern
 
-  FileUploadClient = Object.const_get(Plugins.config_for('archivesspace-file-upload')["model_class"])
-
   ####################
   # Copied from handle_crud(opts) in 
   # frontend/app/controllers/application_controller.rb
@@ -21,10 +19,8 @@ module HandleFileUpload
       #### added for file upload handling
       if opts[:instance] == :digital_object
         object_id = :digital_object_id 
-        obj_last_id = obj.digital_object_id
       elsif opts[:instance] == :digital_object_component
         object_id = :component_id
-        obj_last_id = obj.component_id
 
         if params[opts[:instance]][object_id].empty?
           params[opts[:instance]][object_id] = SecureRandom.uuid
@@ -35,9 +31,20 @@ module HandleFileUpload
       if params[opts[:instance]].has_key?(:file_versions)
         params[opts[:instance]][:file_versions].each do |k, v|
           if v[:file_upload].is_a?(ActionDispatch::Http::UploadedFile)
-            params[opts[:instance]][:file_versions][k][:file_uri] = v[:file_upload].original_filename
+            params[opts[:instance]][:file_versions][k][:file_uri] = v[:file_upload].tempfile.path
             params[opts[:instance]][:file_versions][k][:file_size_bytes] = v[:file_upload].size
             # params[opts[:instance]][:file_versions][k][:file_format_name] = v[:file_upload].content_type
+            begin
+              saved_file_path = File.join(Dir.tmpdir, "#{SecureRandom.uuid}_#{v[:file_upload].original_filename}")
+              File.open(saved_file_path, 'wb') do |file|
+                file.write(v[:file_upload].read)
+              end
+              params[opts[:instance]][:file_versions][k][:file_uri] = saved_file_path
+            rescue => e
+              obj.add_error("file_versions", :file_save_error)
+              instance_variable_set("@exceptions".intern, obj._exceptions)
+              return opts[:on_invalid].call
+            end
           end
         end
       end
@@ -102,7 +109,6 @@ module HandleFileUpload
           instance_variable_set("@exceptions".intern, obj._exceptions)
           return opts[:on_invalid].call
         end
-        FileUploadClient.create_or_update(obj_last_id, obj, params[opts[:instance]])
       rescue SocketError => e
         obj.add_error("file_versions", :file_server_error)
         instance_variable_set("@exceptions".intern, obj._exceptions)

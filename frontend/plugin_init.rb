@@ -57,7 +57,6 @@ Rails.application.config.after_initialize do
       digital_object = JSONModel(:digital_object).find(params[:id])
 
       begin
-        FileUploadClient.delete(digital_object.digital_object_id)
         digital_object.delete
       rescue ConflictException => e
         flash[:error] = I18n.t("digital_object._frontend.messages.delete_conflict", :error => I18n.t("errors.#{e.conflicts}", :default => e.message))
@@ -131,7 +130,6 @@ Rails.application.config.after_initialize do
 
     def delete
       digital_object_component = JSONModel(:digital_object_component).find(params[:id])
-      FileUploadClient.delete(digital_object_component.component_id)
       digital_object_component.delete
 
       flash[:success] = I18n.t("digital_object_component._frontend.messages.deleted", JSONModelI18nWrapper.new(:digital_object_component => digital_object_component).enable_parse_mixed_content!(url_for(:root)))

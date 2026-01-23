@@ -5,4 +5,5 @@ en:
         <p>Uploads a file associated with the digital object.</p>
   validation_errors:
     file_server_error: There was a problem with the file server. Please contact your system administrator.
+    file_save_error: There was a problem saving the file. Please try again.
     must_be_unique: Must be unique.
