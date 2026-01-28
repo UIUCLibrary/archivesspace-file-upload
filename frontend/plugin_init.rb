@@ -52,21 +52,6 @@ Rails.application.config.after_initialize do
                   })
     end
 
-
-    def delete
-      digital_object = JSONModel(:digital_object).find(params[:id])
-
-      begin
-        digital_object.delete
-      rescue ConflictException => e
-        flash[:error] = I18n.t("digital_object._frontend.messages.delete_conflict", :error => I18n.t("errors.#{e.conflicts}", :default => e.message))
-        return redirect_to(:controller => :digital_objects, :action => :show, :id => params[:id])
-      end
-
-      flash[:success] = I18n.t("digital_object._frontend.messages.deleted", JSONModelI18nWrapper.new(:digital_object => digital_object).enable_parse_mixed_content!(url_for(:root)))
-      redirect_to(:controller => :digital_objects, :action => :index, :deleted_uri => digital_object.uri)
-    end
-
   end
 
 
@@ -125,17 +110,6 @@ Rails.application.config.after_initialize do
 
                     render_aspace_partial :partial => "edit_inline"
                   })
-    end
-
-
-    def delete
-      digital_object_component = JSONModel(:digital_object_component).find(params[:id])
-      digital_object_component.delete
-
-      flash[:success] = I18n.t("digital_object_component._frontend.messages.deleted", JSONModelI18nWrapper.new(:digital_object_component => digital_object_component).enable_parse_mixed_content!(url_for(:root)))
-
-      resolver = Resolver.new(digital_object_component['digital_object']['ref'])
-      redirect_to resolver.view_uri
     end
 
   end

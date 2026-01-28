@@ -31,9 +31,6 @@ module HandleFileUpload
       if params[opts[:instance]].has_key?(:file_versions)
         params[opts[:instance]][:file_versions].each do |k, v|
           if v[:file_upload].is_a?(ActionDispatch::Http::UploadedFile)
-            params[opts[:instance]][:file_versions][k][:file_uri] = v[:file_upload].tempfile.path
-            params[opts[:instance]][:file_versions][k][:file_size_bytes] = v[:file_upload].size
-            # params[opts[:instance]][:file_versions][k][:file_format_name] = v[:file_upload].content_type
             begin
               saved_file_path = File.join(Dir.tmpdir, "#{SecureRandom.uuid}_#{v[:file_upload].original_filename}")
               File.open(saved_file_path, 'wb') do |file|
@@ -45,6 +42,7 @@ module HandleFileUpload
               instance_variable_set("@exceptions".intern, obj._exceptions)
               return opts[:on_invalid].call
             end
+
           end
         end
       end
