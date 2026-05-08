@@ -32,11 +32,13 @@ module HandleFileUpload
         params[opts[:instance]][:file_versions].each do |k, v|
           if v[:file_upload].is_a?(ActionDispatch::Http::UploadedFile)
             begin
-              saved_file_path = File.join(Dir.tmpdir, "#{SecureRandom.uuid}_#{v[:file_upload].original_filename}")
+              file_format_version = SecureRandom.uuid # use file_format_version as a control field to ensure the file is temporarily saved and available for upload to Omeka as part of the create/update process
+              saved_file_path = File.join(Dir.tmpdir, "#{file_format_version}_#{v[:file_upload].original_filename}")
               File.open(saved_file_path, 'wb') do |file|
                 file.write(v[:file_upload].read)
               end
-              params[opts[:instance]][:file_versions][k][:file_uri] = saved_file_path
+              params[opts[:instance]][:file_versions][k][:file_uri] = v[:file_upload].original_filename
+              params[opts[:instance]][:file_versions][k][:file_format_version] = file_format_version
             rescue => e
               obj.add_error("file_versions", :file_save_error)
               instance_variable_set("@exceptions".intern, obj._exceptions)
