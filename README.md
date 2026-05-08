@@ -1,4 +1,4 @@
 # ArchivesSpace File Upload Plugin
 
 ## Overview
-This plugin adds file upload functionality to ArchivesSpace for digital objects and digital object components. Uploaded files are stored in an external application, such as Omeka, allowing institutions to manage metadata in ArchivesSpace while hosting digital content elsewhere.
+This plugin adds file upload support to ArchivesSpace digital object components. Uploaded files are stored temporarily and intended for ingestion into external applications like Omeka, supporting workflows where metadata is managed in ArchivesSpace and digital assets are hosted elsewhere.
