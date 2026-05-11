@@ -7,15 +7,17 @@
 
     <% if @digital_object_component %>
       <%= form.label_with_field("file_upload", file_field_tag(form.path("file_upload"), {:id => form.id_for("file_upload")})) %>
+      <%= form.label_and_textarea("file_uri", :field_opts => {:readonly => true}) %>
+    <% else %>
+      <%= form.label_and_textarea("file_uri") %>
     <% end %>
 
-    <%= form.label_and_textarea("file_uri") %>
     <%= form.label_and_boolean("publish", {:class => "js-file-version-publish"}, user_prefs["publish"]) %>
     <%= form.label_and_select("use_statement", form.possible_options_for("use_statement", true)) %>
     <%= form.label_and_select("xlink_actuate_attribute", form.possible_options_for("xlink_actuate_attribute", true)) %>
     <%= form.label_and_select("xlink_show_attribute", form.possible_options_for("xlink_show_attribute", true)) %>
     <%= form.label_and_select("file_format_name", form.possible_options_for("file_format_name", true)) %>
-    <%= form.label_and_textfield("file_format_version") %>
+    <%= form.label_and_textfield("file_format_version", {:control_class => "hidden", :field_opts => {:readonly => true}}) %>
     <%= form.label_and_textfield("file_size_bytes") %>
 
     <%= form.label_and_textfield("checksum") %>
