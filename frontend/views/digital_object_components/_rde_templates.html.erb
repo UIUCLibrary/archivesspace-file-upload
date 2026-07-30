@@ -35,7 +35,7 @@
   <th id="colFActuate" class="fieldset-label sticky" data-section="file"><%= t("file_version.xlink_actuate_attribute") %></th>
   <th id="colFShow" class="fieldset-label sticky" data-section="file"><%= t("file_version.xlink_show_attribute") %></th>
   <th id="colFFormat" class="fieldset-label sticky" data-section="file"><%= t("file_version.file_format_name") %></th>
-  <th id="colFVersion" class="fieldset-label sticky hidden" data-section="file"><%= t("file_version.file_format_version") %></th>
+  <th id="colFVersion" class="fieldset-label sticky d-none" data-section="file"><%= t("file_version.file_format_version") %></th>
   <th id="colFSize" class="fieldset-label" data-section="file"><%= t("file_version.file_size_bytes") %></th>
   <th id="colFCSum" class="fieldset-label" data-section="file"><%= t("file_version.checksum") %></th>
   <th id="colFCSumM" class="fieldset-label sticky" data-section="file"><%= t("file_version.checksum_method") %></th>
@@ -230,7 +230,7 @@
         <%= form.select("file_format_name", jsonmodel_definition(:file_version).options_for(form, "file_format_name", true)) %>
       <% end %>
     </td>
-    <td data-col="colFVersion" class="form-group hidden">
+    <td data-col="colFVersion" class="form-group d-none">
       <% form.push(form.set_index("file_versions[]", 0), begin digital_object_component["file_versions"][0] || {} rescue {} end) do %>
         <%= form.textfield("file_format_version") %>
       <% end %>
